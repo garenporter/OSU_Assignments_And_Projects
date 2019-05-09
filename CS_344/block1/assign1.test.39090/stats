@@ -1,0 +1,136 @@
+#!/bin/bash
+trap "rm -f file$$; rm -f temp_line$$; exit 1" INT HUP TERM KILL
+
+#Checking for correct number of arguments
+#Also checking if a file is specified 
+ps
+file_path="file$$"
+
+if [ "$#" = "1" ]
+  then
+    cat > "$file_path"
+elif [ "$#" = "2" ]
+  then
+    file_path=$2
+    if [[ ! -r $file_path ]]
+    then
+      echo -e "./stats: cannot read $file_path" 1>&2
+       rm -f *$$
+
+      exit 1
+    fi
+else
+  echo -e "Incorrect number of arguments\n ./stats {-rows|-cols} [file]" >&2
+  rm -f *$$
+
+  exit 1
+fi
+
+#Checking for correct -r and -c format
+
+if [[ "$1" == -r* ]]
+  then 
+#create temp file to hold contents of specified file
+
+#cat "$file_path" > temp_file$$
+echo "Average	Median"                                                                                           #display output, which differentiates averages and medians
+
+#This loop is done for rows, and it finds the average and median of each row and prints them to the screen as they are found
+
+cat "$file_path" | while read line
+
+  do
+    touch  temp_line$$                                                                                   #create an empty file, which will hold the current row's data, seperated by spaces
+    sum=0                                                                                              #variable to hold sum of numbers in a row
+    count=0                                                                                            #variable to hold the total number of numbers in a row
+    for i in $line
+      do
+        temp=$i                                                                                        #not neccessry, but stores current number in temp variable
+        echo -n "$temp " >> temp_line$$                                                                #place the current number in the temp_line file, with no trailing newline and a space after the number
+        sum=`expr $sum + $i`                                                                           #sum all of the numbers on the row
+        count=`expr $count + 1`     
+ps        #count the numbers in the row
+    done
+
+      middle=`expr \( $count - 1 \) / 2`                                                          #calculate the position of the middle number
+      middle=`expr $middle + 2 - \( $count % 2 \)`
+#      echo "middle: $middle"
+#      cat temp_line$$
+      median="$(cat temp_line$$ | tr -s ' ' '\n' | sort -n | tr -s '\n' ' ' |  cut -f $middle -d ' ')"   #grab the middle number and store it
+      average=`expr $sum / $count`                                                                     #calculate the average and store it in a variable
+
+      echo "$average	$median"                                                                       #print the average and median, seperated by a tab
+        
+      rm -f temp_line$$                                                                             #remove the temp_line file, so that it can be re-created in the next iteration
+done
+elif [[ "$1" == -c* ]]
+  then 
+# the following block takes the inputed file and changes all rows and cols
+# and stores it in col_temp. In theory, I should now be able to use my rows
+# algorithm to do the collumn stuff.
+    touch col_temp$$
+    numc=$(($(head -n 1 "$file_path" | grep -o '	' | wc -l)+1))
+    for ((i=1; i<="$numc"; i++))
+      do
+       temp_col="$(cut -d '	' -f "$i" "$file_path" | paste -s -d '	')"
+       echo "$temp_col" >> col_temp$$
+      done
+#cat col_temp$$
+  touch col_file$$
+  touch row_file$$
+
+  cat col_temp$$ | while read line
+    do
+      touch temp_line2$$
+      sum2=0;
+      count2=0
+      for i in $line
+        do
+          temp2=$i
+          echo -n "$temp2 " >> temp_line2$$
+          sum2=`expr $sum2 + $i`
+	  count2=`expr $count2  + 1`
+      done
+	
+         middle2=`expr \( $count2 - 1 \) / 2` 
+	 # check if number count is even or odd, if odd add 1, if even add 2
+         middle2=`expr $middle2 + 2 - \( $count2 % 2 \)`
+ 
+         median2="$(cat temp_line2$$ | tr -s ' ' '\n' | sort -n | tr -s '\n' ' ' |  cut -f $middle2 -d ' ')"
+	 average2=`expr $sum2 / $count2`
+	 echo -n "$median2	" >> col_file$$
+         echo -n "$average2	" >> row_file$$
+    rm -f temp_line2$$	
+  done
+  echo "Averages:"
+  cat row_file$$
+  echo ""
+  echo "Medians:"
+  cat col_file$$
+  echo ""
+else
+  echo -e "Incorrect format\n ./stats {-rows|-cols} [file]" >&2
+  rm -f *$$
+  exit 1
+fi
+
+rm -f *$$
+ps
+exit 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

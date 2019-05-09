@@ -1,0 +1,114 @@
+\documentclass[onecolumn, draftclsnofoot,10pt, compsoc]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{hyperref}
+
+%Title Page Information
+\title{Getting Acquainted}
+\author{Adam Ruark, Garen Porter, Jonathan Buntin, Justin Disalvo, and Andrew Jolly}
+\date{15 October 2018}
+
+%Set the margins to .75in
+\usepackage[left=.75in, right=.75in, top=.75in, bottom=.75in,]{geometry}
+
+\begin{document}
+%Make the title page of the document
+\begin{titlepage}
+    %\maketitle
+    \centering
+    \scshape{
+                \huge Assignment 1 - Getting Acquainted \par
+                {October 15, 2018}\par
+                \vspace{.5in}
+                \par{Adam Ruark, Garen Porter, Jonathan Buntin, Justin Disalvo, and Andrew Jolly}
+                \par\vspace{.2in}
+                \par {Operating Systems II - CS 444}
+                \vspace{.5in}
+                \par {Fall 2018}
+                \vspace{50pt}
+            }
+    \begin{abstract}
+    \noindent In assignment 1 how we implemented the Producer/Consumer concurrency problem with using threads and semaphores. Worked with understanding qemu and its flags to be able to use with our concurrency problem. Also recording the version control with git on our work. And having our code run on the os2 server with the correct random number generator for the designated system.
+    \end{abstract}
+    \newpage
+\end{titlepage}
+
+%Sections to answer the questions
+\section{Log of Commands}
+    git clone git://git.yoctoproject.org/linux-yocto-3.19\newline
+    chmod 777 linux-yocto-3.19\newline
+    cd linux-yocto-3.19\newline
+    git checkout tags/v3.19.2\newline
+    source /scratch/opt/environment-setup-i586-poky-linux.csh\newline
+    echo \$GDB\newline
+    cp /scratch/files/bzImage-qemux86.bin bzImage-qemux86.bin\newline
+    cp /scratch/files/core-image-lsb-sdk-qemux86.ext4\newline
+    make -j4 all\newline
+    qemu-system-i386 -gdb tcp::5503 -S -nographic -kernel bzImage-qemux86.bin -drive file=core-image-lsb-sdk-qemux86.ext4,if=virtio -enable-kvm -net none -usb -localtime --no-reboot --append "root=/dev/vda rw console=ttyS0 debug"\newline
+    gdb\newline
+    target remote tcp:localhost:5503\newline
+    c\newline
+    
+    
+\section{Qemu Flags}
+    All flags were found in \href{https://qemu.weilnetz.de/doc/qemu-doc.html}{\textit{QEMU version 3.0.0 User Documentation}} or go to the url: \url{https://qemu.weilnetz.de/doc/qemu-doc.html} \newline
+    
+    \noindent \textbf{qemu-system-i386} -- Command to run qemu-system-i386\newline
+    \textbf{-gdb tcp::5503} -- Open a gdbserver on TCP port 5503\newline
+    \textbf{ -S} -- Do not start CPU at startup (you must type 'c' in the monitor)\newline
+    \textbf{ -nographic} -- Disable graphical output so that QEMU is a simple command line application\newline
+    \textbf{-kernel bzImage-qemux86.bin} -- Use bzImage as kernel image\newline
+    \textbf{-drive} -- Define a new drive\newline
+    \textbf{ file=core-image-lsb-sdk-qemux86.ext4,} -- Define which disk image to use with this drive\newline
+    \textbf{ if=virtio} -- Define on which type on interface the drive is connected\newline
+    \textbf{ -enable-kvm} -- Enable KVM full virtualization support\newline
+    \textbf{-net none} -- Disable a network interface card (nic). If this was not included, a single nic would be created\newline
+    \textbf{-usb} -- Enable the USB driver (if it is not used by default yet) \newline
+    \textbf{ -localtime} -- Use local time\newline
+    \textbf{--no-reboot} -- exit instead of rebooting\newline
+    \textbf{--append "root=/dev/vda rw console=ttyS0 debug"} -- Use information inside "..." as kernel command line \newline
+
+\section{Concurrency}
+    \subsection{Solution}
+        We implemented our solution as one producer and one consumer. Each one is ran as a separate thread. And the buffer is initialized as a item with ran number and a sleep time.
+        Each thread uses the pthread mutex to lock and unlock. In doing so ensures only one thread is running at a time. Each thread then uses the compatible random generator by checking if rdrand is supported or not. Then each will try to run if the mutex is unlocked/not asleep. If so then they lock the mutex and check if they can actually do work (not full or not empty). Finish adding/taking away from the buffer, then unlock mutex and sleep. Also they signal each other if one was waiting on the other thread.
+    \subsection{Questions}
+        1. What do you think the main point of this assignment is? \newline \par
+            \noindent The main point of part 4, Concurrency Exercise, was to get the students thinking in parallel programming. Additionally, to get the student familiar with using threads and other tools used in parallel programming.  \newline \newline
+        2. How did you personally approach the problem? Design decisions, algorithm, etc. \newline \par
+            \noindent A struct was used to represent the buffer. This struct would have an array of items and a size counter. Each item would be a struct containing the necessary information described in the problem. Next, two functions were created, one for consumer and one for producer. Each function would be executed by a different pthread, and each function would contain a infinite loop that keeps the producer and consumer going forever. \newline 
+            
+            \noindent A challenge was figuring out how to make the producer and consumer "take turns." After some thought, the best solution was to have the threads send signals to each other when they are not producing or consuming. \newline \newline
+        3. How did you ensure your solutions was correct? Testing details, for instance. \newline \par
+            \noindent To verify the solution, a print statement was placed before a thread performed an action, as to know what each thread was doing at many moment. Also, whenever a thread modified the buffer, the contents of the buffer were printed to verify that it's contents are correct. Then, the program ran for a couple minutes. After reading through all of the print statements we would verify that the program is functioning correctly. \newline \newline
+        4. What did you learn? \newline \par
+            \noindent When sharing resources, threads need to use semaphores to prevent deadlocking and race conditions. It is important to properly control the threads and ensure that proper features are in place to prevent the multithreading program from going away. Always make sure a thread locks the resource it is intending to use, and always makes sure it unlocks it when it is done. Also, coding is much easier when you draw out a plan before hand and it is best to not dive in to a new concept blindly.
+\section{Version Control Log}
+commit 71a31c8aa5b966d95f8db108598a0be2fb4b8890 \\
+Merge: c1bb4b7398c 0dcb5616701 \\
+Author: AdamRuark <adamruark15@gmail.com> \\
+Date:   Wed Oct 10 15:20:25 2018 -0700 \\
+
+    Merge pull request \# 1 from AdamRuark/restructure \\
+    
+    Restructure \\
+
+\noindent commit 0dcb56167010a5b28360e443e2701c31bf1d571e \\
+Author: AdamRuark <adamruark15@gmail.com> \\
+Date:   Tue Oct 9 23:10:20 2018 -0700 \\
+
+    Forgot files \\
+
+\noindent commit 050977a9e718a2018002566b70a72555f3ab3ba3 \\
+Author: AdamRuark <adamruark15@gmail.com> \\
+Date:   Tue Oct 9 22:50:24 2018 -0700 \\
+
+    Move files with hierarchy and add concurrency problem \\
+\section{Work Log}
+    \textbf{Adam Ruark }-- Integrated rdrand and mersenne twister algorithms to Garen's work on the concurrency problem. I also created the makefile to compile our solution.\newline
+    \textbf{Garen Porter} -- Designed and implemented the solution to the concurrency problem. My solution did not include the mersenne twister or rdrand implementation. Adam took my C file and added the rdrand and mersenne twister implementation verified my work. I also answered questions 2 and 3 of concurrency problem questions.\newline
+    \textbf{Jonathan Buntin} -- I performed parts 1 and 2 of assignment one to test qemu and build/run the kernel on os2. I then listed the commands I used for both of these parts under the list of commands section.\newline
+    \textbf{Justin Disalvo} -- Created and set up the skeleton of the document.Used an online source to look up all qemu flags. Answered question 1 in section 3.2 "Questions" and inquired about question 2 through 4 from the person who did the problem. \newline
+    \textbf{Andrew Jolly} -- Worked on formatting the document and adding the title page on 8/14 at 7:00pm. Also added text under the concurrency solution. Reviewed questions 1-4 for grammar for unclear wording. Also added an abstract of the assignment for a brief overview of what was worked on and covered. Retrieved the commit log from git. \newline
+\end{document}

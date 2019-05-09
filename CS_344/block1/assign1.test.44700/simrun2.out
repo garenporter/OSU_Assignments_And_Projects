@@ -1,0 +1,29 @@
+  PID TTY          TIME CMD
+  583 pts/76   00:00:00 stats
+  584 pts/76   00:00:00 stats
+  585 pts/76   00:00:00 stats
+  586 pts/76   00:00:00 sleep
+  587 pts/76   00:00:00 ps
+  588 pts/76   00:00:00 ps
+43923 pts/76   00:00:00 bash
+44700 pts/76   00:00:00 p1gradingscript
+Average	Median
+93	93
+85	84
+74	81
+73	80
+80	81
+64	61
+55	54
+54	53
+100	100
+  PID TTY          TIME CMD
+  583 pts/76   00:00:00 stats
+  584 pts/76   00:00:00 stats
+  585 pts/76   00:00:00 stats
+  586 pts/76   00:00:00 sleep
+ 1431 pts/76   00:00:00 ps
+ 1432 pts/76   00:00:00 ps
+ 1434 pts/76   00:00:00 ps
+43923 pts/76   00:00:00 bash
+44700 pts/76   00:00:00 p1gradingscript

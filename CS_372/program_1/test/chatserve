@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+#IMPORTANT: chatserv must run on flip1.engr.oregonstate.edu
+
+#Name: Garen Porter
+#Program name: chatserve
+#Program description: Creates a TCP socket using a port specified as a command line argument.
+#                     Waits for a client to connect to the port. Once connection is established,
+#                     both clients may take turns sending messages back and forth.
+#Course name: CS 372: Intro to Computer Networks
+#Last modified: 2/6/2019
+'''Citations: 
+The following cite was used to assist with the socket related functions: https://pymotw.com/2/socket/tcp.html
+'''
+
+import sys
+import socket
+
+#Function description: Provides a chat loop between client and server 
+#Preconditions: Connection has been made between client and server
+#Postconditions: Server is no longer connected to the client
+def p2p_chat(connection):
+    #stay in this loop until server quits
+    while 1:
+        message = raw_input('Server> ')     #get input from user
+
+        temp = message
+
+        #message = 'Server> ' + message
+        send_message(message, connection)   #send message to client
+
+        #if server wants to quit, break out of chat loop
+        if temp == 'quit':
+            break
+
+        data = rec_message(connection)      #receive client's message
+
+        #if data was received, print it. Else break out of chat loop
+        if data:
+            print(data)
+        else:
+            print('No data to receive')
+            break
+
+#Function description: Sends a message to client over TCP connection
+#Preconditions: Connection is established between client and server
+#Postconditions: Message has been successfully sent to client
+#Cites used: https://pymotw.com/2/socket/tcp.html
+def send_message(message, connection):
+    connection.sendall(message)     #send message to client over TCP connection
+
+#Function description: Blocks until message has been received from client
+#Preconditions: Connection has been established between client and server
+#Postconditions: Message from client has been received in full
+#Cites used: https://pymotw.com/2/socket/tcp.html
+def rec_message(connection):
+    return connection.recv(500)     #receive message from client over TCP connection
+
+#Function description: Sets up the TCP socket and how many connections can be made at a time
+#Preconditions: Port number was specified at command line
+#Postconditions: Server is ready to accep incoming connections
+#Cites used: https://pymotw.com/2/socket/tcp.html
+def startup(port):
+
+    #create TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    #bind socket to port
+    server_address = ('flip1.engr.oregonstate.edu', port)       #set address to be server hostname and port#
+    sock.bind(server_address)
+
+    #listen for connections (total of 1 connection can be made at a time)
+    sock.listen(1)
+
+    #return the socket
+    return sock 
+
+#Function description: Accepts a client connection and exchanges port numbers between client and server
+#Preconditions: Socket was successfully setup
+#Postconditions: Connection between client and server is fully established
+#Cites used: https://pymotw.com/2/socket/tcp.html
+def connect(port, sock):
+
+    #initial connection
+    print('Waiting for client to connect...')
+    connection, client_address = sock.accept()  #accept incoming client connection and retrieve client's address
+    print 'Connected to', client_address
+
+    #exchange of portnums
+    print('Waiting to recieve client PORTNUM...')
+    data = rec_message(connection)                  #receive client's port#
+
+    #if port# was received, print it, else exit with error status       
+    if data:
+        print 'Client portnum received:', data
+    else:
+        print("PORTNUM failed. Exiting.")
+        connection.close()
+        exit(1)
+
+    send_message(str(port), connection)         #send client server's port#
+    print("Connection established!")
+
+    return connection                           #return connection
+
+if __name__ == "__main__":
+
+    #if incorrect number of cmd args are given, exit with error status
+    if len(sys.argv) < 2:
+        print('Not enough arguments! Usage: port#')
+        exit(1)
+
+    port = int(sys.argv[1])                 #cast port number to an int
+
+    sock = startup(port)                    #setup the socket for TCP connections
+
+    #main program loop: connect with client -> chat with client -> close client connection -> repeat
+    while 1:
+        connection = connect(port, sock)    #establish connection with client
+
+        p2p_chat(connection)                #chat with client
+
+        connection.close()                  #close connection with client, Cites used: https://pymotw.com/2/socket/tcp.html
+
+
+
